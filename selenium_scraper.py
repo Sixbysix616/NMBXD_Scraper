@@ -6,6 +6,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
+from bs4.element import Tag
+from urllib.parse import urlparse
+import requests
+import hashlib
 import os
 import textwrap
 
@@ -104,11 +108,49 @@ def fetch_thread(thread_id, save_txt=True, save_html=False):
 
             all_posts.append(f"{header}\n{body_text}")
 
+            # 图片处理开始
+            soup_post = BeautifulSoup(str(post), "html.parser")
+            image_links = soup_post.find_all("a", class_="h-threads-img-a")
+
+            for a_tag in image_links:
+                if not isinstance(a_tag, Tag):
+                    continue
+                href = a_tag.get("href")
+                
+
+                img_url = str(href)
+                if not img_url or not img_url.endswith((".jpg", ".jpeg", ".png", ".gif", ".webp")):
+                    continue
+                img_ext = os.path.splitext(urlparse(img_url).path)[-1] or ".jpg"
+                img_hash = hashlib.md5(img_url.encode("utf-8")).hexdigest()
+                img_filename = f"{img_hash}{img_ext}"
+                thread_dir = os.path.join(get_downloads_dir(), str(thread_id))
+                images_dir = os.path.join(thread_dir, "images")
+                os.makedirs(images_dir, exist_ok=True)
+                local_img_path = os.path.join(images_dir, img_filename)
+
+                if not os.path.exists(local_img_path):
+                    try:
+                        r = requests.get(img_url, timeout=10)
+                        if r.status_code == 200:
+                            with open(local_img_path, "wb") as f:
+                                f.write(r.content)
+                            print(f"📥 图片已保存：{img_filename}")
+                        else:
+                            print(f"⚠️ 下载失败：{img_url} - 状态码: {r.status_code}")
+                            continue
+                    except Exception as e:
+                        print(f"⚠️ 下载异常：{img_url} - {e}")
+                        continue
+
+                new_img_tag = soup_post.new_tag("img", src=f"images/{img_filename}")
+                a_tag.replace_with(new_img_tag)
+            # 图片处理结束
+
             body_html = ''.join(str(tag).strip() for tag in content.contents).strip()
             html_post = f'<div class="post"><div class="meta">{header}</div><div class="content">{body_html}</div></div>'
-            #html_post = f"""
-            #<div class="post">
-            #### """
+
+          
             html_posts.append(html_post)
 
         pagination = soup.select_one(".uk-pagination")

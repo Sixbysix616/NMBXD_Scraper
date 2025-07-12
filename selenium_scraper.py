@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import os
+import textwrap
 
 def get_downloads_dir():
     return os.path.join(os.path.expanduser("~"), "Downloads", "nmbxd")
@@ -103,13 +104,11 @@ def fetch_thread(thread_id, save_txt=True, save_html=False):
 
             all_posts.append(f"{header}\n{body_text}")
 
-            body_html = content.decode_contents()
-            html_post = f"""
-            <div class="post">
-              <div class="meta">{header}</div>
-              <div class="content">{body_html}</div>
-            </div>
-            """
+            body_html = ''.join(str(tag).strip() for tag in content.contents).strip()
+            html_post = f'<div class="post"><div class="meta">{header}</div><div class="content">{body_html}</div></div>'
+            #html_post = f"""
+            #<div class="post">
+            #### """
             html_posts.append(html_post)
 
         pagination = soup.select_one(".uk-pagination")

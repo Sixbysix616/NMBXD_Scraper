@@ -1,11 +1,11 @@
-# NMBXD Scraper 🕸️
+# NMBXD Scraper 
 
 A Python-based scraper for **nmbxd1.com**, designed to **export and archive forum threads** in both **TXT** and **HTML** formats for offline viewing.  
 The project aims to preserve forum discussions while maintaining original formatting and user metadata.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Automated scraping** of NMBXD forum threads using `Selenium` and `BeautifulSoup`
 - **TXT export** with preserved structure:

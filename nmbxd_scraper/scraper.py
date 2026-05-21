@@ -4,6 +4,7 @@ import time
 
 from .config import THREAD_URL, REQUEST_DELAY
 from .storage import (
+    get_default_output_dir,
     get_thread_dir,
     ensure_thread_dirs,
     save_checkpoint,
@@ -16,16 +17,12 @@ from .images import download_images
 from .exporters import render_txt_entry, render_html_post, write_txt, write_html
 
 
-def _resume_or_fresh(thread_id):
+def _load_state(thread_dir, resume):
     """Return (start_page, first_uid, floor_counter, all_posts, html_posts)."""
-    checkpoint = load_checkpoint(thread_id)
-    if checkpoint:
-        prompt = (
-            f"🔄 发现第 {checkpoint['page']} 页的未完成记录"
-            f"（已有 {len(checkpoint['all_posts'])} 层楼），是否继续？(y/n) > "
-        )
-        if input(prompt).strip().lower() == "y":
-            print(f"▶️ 从第 {checkpoint['page'] + 1} 页继续抓取")
+    if resume:
+        checkpoint = load_checkpoint(thread_dir)
+        if checkpoint:
+            print(f"▶️ 从第 {checkpoint['page'] + 1} 页继续抓取(つд⊂)")
             return (
                 checkpoint["page"] + 1,
                 checkpoint.get("first_uid"),
@@ -36,11 +33,14 @@ def _resume_or_fresh(thread_id):
     return 1, None, 0, [], []
 
 
-def fetch_thread(thread_id, save_txt=True, save_html=False):
-    images_dir = ensure_thread_dirs(thread_id)
-    thread_dir = get_thread_dir(thread_id)
+def fetch_thread(thread_id, save_txt=True, save_html=False, output_dir=None, resume=False):
+    """Scrape a thread into output_dir/{thread_id}/. Returns that thread directory."""
+    if output_dir is None:
+        output_dir = get_default_output_dir()
+    thread_dir = get_thread_dir(output_dir, thread_id)
+    images_dir = ensure_thread_dirs(thread_dir)
 
-    page, first_uid, floor_counter, all_posts, html_posts = _resume_or_fresh(thread_id)
+    page, first_uid, floor_counter, all_posts, html_posts = _load_state(thread_dir, resume)
 
     while True:
         url = THREAD_URL.format(thread_id=thread_id, page=page)
@@ -48,7 +48,7 @@ def fetch_thread(thread_id, save_txt=True, save_html=False):
 
         page_source = fetch_page(url)
         if page_source is None:
-            print("❌ 页面加载失败，停止抓取")
+            print("❌ 页面加载失败(ﾟДﾟ≡ﾟДﾟ)，停止抓取")
             break
 
         result = parse_page(page_source, include_main=(page == 1))
@@ -76,7 +76,7 @@ def fetch_thread(thread_id, save_txt=True, save_html=False):
                     render_html_post(post.post_id, meta_text, post.raw_html, img_map)
                 )
 
-        save_checkpoint(thread_id, {
+        save_checkpoint(thread_dir, {
             "page": page,
             "first_uid": first_uid,
             "floor_counter": floor_counter,
@@ -99,5 +99,6 @@ def fetch_thread(thread_id, save_txt=True, save_html=False):
         write_html(thread_id, html_posts, html_path)
         print(f"🌐 已保存 HTML 文件：{html_path}")
 
-    clear_checkpoint(thread_id)
-    print(f"\n✅ 抓取完成，共 {len(all_posts)} 层楼")
+    clear_checkpoint(thread_dir)
+    print(f"\n✅ 抓取完成(ゝ∀･)，共 {len(all_posts)} 层楼")
+    return thread_dir

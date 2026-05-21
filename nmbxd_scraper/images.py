@@ -27,9 +27,9 @@ def _download_one(img_url, images_dir):
                 f.write(r.content)
             print(f"📥 图片已保存：{img_filename}")
             return img_url, img_filename
-        print(f"⚠️ 下载失败：{img_url} - 状态码: {r.status_code}")
+        print(f"⚠️ 下载失败Σ( ﾟдﾟ)：{img_url} - 状态码: {r.status_code}")
     except Exception as e:
-        print(f"⚠️ 下载异常：{img_url} - {e}")
+        print(f"⚠️ 下载异常Σ( ﾟдﾟ)：{img_url} - {e}")
     return img_url, None
 
 

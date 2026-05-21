@@ -15,7 +15,7 @@ def fetch_page(url):
             if r.status_code == 200:
                 r.encoding = "utf-8"
                 return r.text
-            print(f"⚠️ 第 {attempt} 次加载失败: HTTP {r.status_code}")
+            print(f"⚠️ 第 {attempt} 次加载失败Σ( ﾟдﾟ): HTTP {r.status_code}")
         except Exception as e:
-            print(f"⚠️ 第 {attempt} 次加载失败: {e}")
+            print(f"⚠️ 第 {attempt} 次加载失败Σ( ﾟдﾟ): {e}")
     return None

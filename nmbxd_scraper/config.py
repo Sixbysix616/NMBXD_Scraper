@@ -1,8 +1,9 @@
 """Shared configuration constants."""
 
-# Page loading
+# Page fetching
 MAX_PAGE_RETRIES = 3
-PAGE_LOAD_TIMEOUT = 10  # seconds
+PAGE_TIMEOUT = 10     # seconds, per HTTP request
+REQUEST_DELAY = 1.0  # seconds to wait between page requests (be polite to the server)
 
 # Image downloading
 IMAGE_TIMEOUT = 10  # seconds
@@ -17,4 +18,6 @@ USER_AGENT = (
 
 # Site
 THREAD_URL = "https://www.nmbxd1.com/t/{thread_id}?page={page}"
-CONTENT_SELECTOR = ".h-threads-content"
+
+# HTML output
+POSTS_PER_PAGE = 19  # posts per page in the paginated HTML archive

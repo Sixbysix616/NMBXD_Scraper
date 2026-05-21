@@ -30,21 +30,35 @@ def render_html_post(post_id, meta_text, raw_html, img_url_to_filename):
 
 
 def _localize_images(raw_html, img_url_to_filename):
-    """Re-parse a post's HTML, swap image links to local paths, return content HTML."""
+    """Re-parse a post's HTML and return body HTML: text, then localized images.
+
+    Image links (.h-threads-img-a) live in .h-threads-img-box, a sibling of the
+    text container .h-threads-content, so they must be collected separately
+    instead of just returning the content element's children.
+    """
     soup_post = BeautifulSoup(raw_html, "html.parser")
+
+    images_html = []
     for a_tag in soup_post.find_all("a", class_="h-threads-img-a"):
         if not isinstance(a_tag, Tag):
             continue
         href = a_tag.get("href")
         img_url = str(href) if href else ""
+        if not img_url:
+            continue
         local_src = (
             f"images/{img_url_to_filename[img_url]}"
             if img_url in img_url_to_filename
             else img_url
         )
-        a_tag.replace_with(soup_post.new_tag("img", src=local_src))
-    soup_content = soup_post.select_one(".h-threads-content")
-    return ''.join(str(tag).strip() for tag in soup_content.contents).strip()
+        images_html.append(f'<img src="{local_src}">')
+
+    content = soup_post.select_one(".h-threads-content")
+    text_html = ""
+    if content:
+        text_html = "".join(str(tag).strip() for tag in content.contents).strip()
+
+    return text_html + "".join(images_html)
 
 
 def write_txt(posts_txt, txt_path):

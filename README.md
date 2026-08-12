@@ -7,9 +7,10 @@ A Python-based web scraper for **nmbxd1.com** (X岛匿名版), designed to **exp
 ## Features
 
 - **Multi-page thread scraping** - Automatically fetches all pages of a thread
-- **Dual export formats**:
+- **Three export formats** (pick any combination):
   - **TXT**: Clean, readable text format with user IDs, timestamps, and post numbers
   - **HTML**: Formatted HTML with embedded images for offline viewing
+  - **CSV**: One row per post (`floor, post_id, uid, is_po, time, body_text, image_urls`) for spreadsheet analysis. Written as UTF-8 with BOM so Excel opens Chinese correctly.
 - **Image downloading** - Automatically downloads and embeds thread images locally
 - **User identification** - Marks original poster (PO主) across all posts
 - **Headless browser support** - Runs in background without opening browser windows
@@ -63,14 +64,9 @@ python selenium_scraper.py
    ```
    The thread ID is the number from the URL: `https://www.nmbxd1.com/t/12345678`
 
-2. **Choose export format**:
-   ```
-   请选择保存格式：
-   1. 仅保存 TXT
-   2. 仅保存 HTML
-   3. 同时保存 TXT 和 HTML
-   > 3
-   ```
+2. **Choose export formats** — three independent checkboxes (`TXT` / `HTML` / `CSV`), tick any combination. TXT and HTML are on by default; at least one must be selected.
+
+   Note: images are only downloaded when **HTML** is selected. A CSV-only run records the original remote image URLs and downloads nothing.
 
 ### Example Session
 
@@ -109,7 +105,8 @@ All files are saved to `~/Downloads/nmbxd/`:
 └── 58339933/
     ├── 58339933.txt          # Text export
     ├── 58339933.html         # HTML export
-    └── images/               # Downloaded images
+    ├── 58339933.csv          # CSV export (one row per post)
+    └── images/               # Downloaded images (HTML export only)
         ├── a1b2c3d4e5f6.jpg
         └── 7f8e9d0c1b2a.png
 ```
@@ -129,6 +126,21 @@ kL9MnPq 2025-01-15 12:45:23 No.58340001
 gN7KHJl(PO主) 2025-01-15 13:01:42 No.58340123
 PO主的回复会标记出来
 ```
+
+### CSV Format
+
+One row per post, header included:
+
+```
+floor,post_id,uid,is_po,time,body_text,image_urls
+1,58339933,gN7KHJl,True,2025-01-15 12:34:56,"这是主题帖的内容
+可以有多行",https://…/a1b2c3.jpg
+2,58340001,kL9MnPq,False,2025-01-15 12:45:23,这是回复内容,
+```
+
+- `is_po` is `True` only for posts by the thread starter
+- `image_urls` holds the original remote URLs, `;`-separated
+- Multi-line post bodies are quoted, so they stay in a single cell
 
 ### HTML Format
 

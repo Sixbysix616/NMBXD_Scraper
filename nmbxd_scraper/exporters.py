@@ -1,10 +1,13 @@
-"""Render parsed posts into TXT and HTML output."""
+"""Render parsed posts into TXT, HTML and CSV output."""
+import csv
 import re
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
 from .config import POSTS_PER_PAGE
+
+CSV_FIELDS = ["floor", "post_id", "uid", "is_po", "time", "body_text", "image_urls"]
 
 
 def linkify_quotes(html_str):
@@ -17,6 +20,19 @@ def render_txt_entry(floor, meta_text, body_text, image_urls):
     if image_urls:
         entry += "\n" + "\n".join(f"[图片: {u}]" for u in image_urls)
     return entry
+
+
+def render_csv_row(floor, post, is_po):
+    """Build one CSV row from a Post. Image URLs stay remote so CSV needs no downloads."""
+    return {
+        "floor": floor,
+        "post_id": post.post_id,
+        "uid": post.uid,
+        "is_po": is_po,
+        "time": post.time,
+        "body_text": post.body_text,
+        "image_urls": ";".join(post.image_urls),
+    }
 
 
 def render_html_post(post_id, meta_text, raw_html, img_url_to_filename):
@@ -64,6 +80,15 @@ def _localize_images(raw_html, img_url_to_filename):
 def write_txt(posts_txt, txt_path):
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n\n".join(posts_txt))
+
+
+def write_csv(rows, csv_path):
+    # utf-8-sig so Excel reads Chinese correctly; newline="" so Windows doesn't
+    # turn the csv module's \r\n into \r\r\n and blank-line every other row.
+    with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def write_html(thread_id, posts_html, html_path):

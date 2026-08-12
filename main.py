@@ -49,9 +49,11 @@ class App:
         frm_fmt = tk.Frame(self.root)
         frm_fmt.pack(fill="x", **pad)
         tk.Label(frm_fmt, text="保存格式：").pack(side="left")
-        self.fmt = tk.StringVar(value="3")
-        for text, val in [("仅 TXT", "1"), ("仅 HTML", "2"), ("两者都要", "3")]:
-            tk.Radiobutton(frm_fmt, text=text, variable=self.fmt, value=val).pack(side="left")
+        self.var_txt = tk.BooleanVar(value=True)
+        self.var_html = tk.BooleanVar(value=True)
+        self.var_csv = tk.BooleanVar(value=False)
+        for text, var in [("TXT", self.var_txt), ("HTML", self.var_html), ("CSV", self.var_csv)]:
+            tk.Checkbutton(frm_fmt, text=text, variable=var).pack(side="left")
 
         frm_dir = tk.Frame(self.root)
         frm_dir.pack(fill="x", **pad)
@@ -97,6 +99,13 @@ class App:
             messagebox.showerror("错误", "串号无效Σ( ﾟдﾟ)，请输入纯数字")
             return
 
+        save_txt = self.var_txt.get()
+        save_html = self.var_html.get()
+        save_csv = self.var_csv.get()
+        if not (save_txt or save_html or save_csv):
+            messagebox.showerror("错误", "至少选一种保存格式(´・ω・`)")
+            return
+
         thread_dir = get_thread_dir(self.output_dir, tid)
         resume = False
         if load_checkpoint(thread_dir):
@@ -104,18 +113,17 @@ class App:
                 "继续抓取", "发现未完成的记录，是否从上次中断处继续(つд⊂)？"
             )
 
-        fmt = self.fmt.get()
         self.scraping = True
         self.btn_start.config(state="disabled", text="抓取中…")
         self._log("\n" + "=" * 46 + "\n")
 
         threading.Thread(
             target=self._worker,
-            args=(tid, fmt in ("1", "3"), fmt in ("2", "3"), resume),
+            args=(tid, save_txt, save_html, save_csv, resume),
             daemon=True,
         ).start()
 
-    def _worker(self, tid, save_txt, save_html, resume):
+    def _worker(self, tid, save_txt, save_html, save_csv, resume):
         old_stdout = sys.stdout
         sys.stdout = _QueueWriter(self.queue)
         thread_dir = None
@@ -124,6 +132,7 @@ class App:
                 tid,
                 save_txt=save_txt,
                 save_html=save_html,
+                save_csv=save_csv,
                 output_dir=self.output_dir,
                 resume=resume,
             )
